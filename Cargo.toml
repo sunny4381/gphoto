@@ -1,0 +1,16 @@
+[package]
+name = "gphoto"
+version = "0.1.0"
+authors = ["NAKANO Hideo <pinarello.marvel@gmail.com>"]
+
+[dependencies]
+docopt = "*"
+rustc-serialize = "*"
+env_logger = "*"
+hyper = "*"
+hyper-native-tls = "*"
+native-tls = "*"
+serde_json = "*"
+url = "*"
+time = "*"
+mime = "*"
