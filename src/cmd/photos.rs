@@ -8,7 +8,7 @@ use serde_json;
 use time::{self, Timespec};
 
 use super::Args;
-use super::access::{client, USER_AGENT, GDataVersion};
+use goauth::{client, USER_AGENT, GDataVersion};
 use config::Config;
 use error::Error;
 

@@ -1,7 +1,7 @@
 use std::io::{self,BufRead,Write};
 
 use super::Args;
-use super::access::{auth_url, auth_token};
+use goauth::{auth_url, auth_token};
 use error::Error;
 use config::Config;
 

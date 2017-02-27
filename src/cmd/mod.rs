@@ -1,4 +1,3 @@
-mod access;
 mod albums;
 mod init;
 mod photos;

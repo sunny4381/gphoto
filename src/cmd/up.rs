@@ -6,7 +6,7 @@ use hyper::header::{UserAgent, Authorization, ContentType, ContentLength};
 use mime;
 
 use super::Args;
-use super::access::{client, USER_AGENT, GDataVersion, Slug};
+use goauth::{client, USER_AGENT, GDataVersion, Slug};
 use config::Config;
 use error::Error;
 

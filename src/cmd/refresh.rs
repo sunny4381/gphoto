@@ -1,11 +1,11 @@
 use super::Args;
-use super::access;
+use goauth;
 use config::Config;
 use error::Error;
 
 pub fn execute_refresh(_: &Args) -> Result<(), Error> {
     let config = try!(Config::load("default"));
-    let token = try!(access::refresh_token(&config.client_id, &config.client_secret, &config.refresh_token));
+    let token = try!(goauth::refresh_token(&config.client_id, &config.client_secret, &config.refresh_token));
 
     let new_config = Config {
         client_id: config.client_id,
