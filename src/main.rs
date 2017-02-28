@@ -25,12 +25,12 @@ const USAGE: &'static str = r#"
 Google Photo Uploader.
 
 Usage:
-  gup init <clinet-id> [--secret=<secret>]
-  gup refresh
-  gup albums
-  gup photos [--album=<album>] [--max=<max>]
-  gup up <file> [--name=<name>] [--album=<album>]
-  gup (-h | --help)
+  gphoto init <clinet-id> [--secret=<secret>]
+  gphoto refresh
+  gphoto albums
+  gphoto photos [--album=<album>] [--max=<max>]
+  gphoto up <file> [--name=<name>] [--album=<album>]
+  gphoto (-h | --help)
 Options:
   -h, --help     Show this screen.
   --secret=<secret> Specify client secret.
