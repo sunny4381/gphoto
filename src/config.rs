@@ -1,6 +1,7 @@
 use std::env;
-use std::fs::File;
+use std::fs;
 use std::io::Write;
+use std::path;
 
 use serde_json;
 
@@ -15,20 +16,23 @@ pub struct Config {
     pub refresh_token: String,
 }
 
-fn home_dir() -> Result<String, env::VarError> {
-    let mut home = env::var("GPHOTO_HOME");
-    if home.is_ok() {
-        return home;
-    }
-    home = env::var("HOME");
-    return home;
+fn home_dir() -> Result<path::PathBuf, env::VarError> {
+    match env::var("GPHOTO_HOME") {
+        Ok(path) => return Ok(path::PathBuf::from(path)),
+        Err(_) => (),
+    };
+
+    let home = try!(env::var("HOME"));
+    let mut homepath = path::PathBuf::from(home);
+    homepath.push(".gphoto");
+    return Ok(homepath);
 }
 
 impl Config {
     pub fn load(profile: &str) -> Result<Config, Error> {
-        let home = try!(home_dir());
-        let filepath = format!("{}/.gphoto/{}", home, profile);
-        let file = try!(File::open(filepath));
+        let gphoto_dir = try!(home_dir());
+        let filepath = gphoto_dir.as_path().join(profile);
+        let file = try!(fs::File::open(filepath));
 
         let token_json: serde_json::Value = try!(serde_json::from_reader(file));
         return Ok(Config {
@@ -40,10 +44,6 @@ impl Config {
         });
     }
 
-    // pub fn load_default() -> Result<Config, Error> {
-    //     return self::load("default");
-    // }
-
     pub fn save(&self, profile: &str) -> Result<(), Error> {
         let cfg = json!({
             "client_id": self.client_id,
@@ -53,9 +53,11 @@ impl Config {
             "refresh_token": self.refresh_token,
         });
 
-        let home = try!(home_dir());
-        let filepath = format!("{}/.gphoto/{}", home, profile);
-        let mut file = try!(File::create(filepath));
+        let gphoto_dir = try!(home_dir());
+        try!(fs::create_dir_all(gphoto_dir.as_path()));
+
+        let filepath = gphoto_dir.as_path().join(profile);
+        let mut file = try!(fs::File::create(filepath));
 
         file.write_all(cfg.to_string().as_bytes()).unwrap();
 
