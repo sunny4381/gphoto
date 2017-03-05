@@ -1,6 +1,3 @@
-use std;
-
-use hyper;
 use hyper::Client;
 use hyper::net::HttpsConnector;
 use hyper_native_tls::NativeTlsClient;
@@ -71,9 +68,10 @@ pub fn auth_token(client_id: &str, client_secret: &str, code: &str) -> Result<To
     
     let res = try!(req.send());
 
-    let token_body: serde_json::Value = match res.status {
-        hyper::status::StatusCode::Ok => try!(serde_json::from_reader(res)),
-        _ => return Err(From::from(std::io::Error::new(std::io::ErrorKind::Other, res.status.to_string())))
+    let token_body: serde_json::Value = if res.status.is_success() {
+        try!(serde_json::from_reader(res))
+    } else {
+        return Err(Error::HttpError(res.status))
     };
 
     return Ok(
@@ -101,9 +99,10 @@ pub fn refresh_token(client_id: &str, client_secret: &str, refresh_token: &str) 
     
     let res = try!(req.send());
 
-    let refresh_body: serde_json::Value = match res.status {
-        hyper::status::StatusCode::Ok => try!(serde_json::from_reader(res)),
-        _ => return Err(From::from(std::io::Error::new(std::io::ErrorKind::Other, res.status.to_string())))
+    let refresh_body: serde_json::Value = if res.status.is_success() {
+        try!(serde_json::from_reader(res))
+    } else {
+        return Err(Error::HttpError(res.status))
     };
 
     return Ok(
@@ -124,9 +123,10 @@ pub fn user_info(access_token: &str) -> Result<UserInfo, Error> {
     
     let info_res = try!(info_req.send());
 
-    let info_body: serde_json::Value = match info_res.status {
-        hyper::status::StatusCode::Ok => try!(serde_json::from_reader(info_res)),
-        _ => return Err(From::from(std::io::Error::new(std::io::ErrorKind::Other, info_res.status.to_string())))
+    let info_body: serde_json::Value = if info_res.status.is_success() {
+        try!(serde_json::from_reader(info_res))
+    } else {
+        return Err(Error::HttpError(info_res.status))
     };
 
     return Ok(UserInfo {

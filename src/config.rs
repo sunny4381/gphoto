@@ -35,12 +35,18 @@ impl Config {
         let file = try!(fs::File::open(filepath));
 
         let token_json: serde_json::Value = try!(serde_json::from_reader(file));
+        let access_token = token_json["access_token"].as_str().map(String::from);
+        let client_id = token_json["client_id"].as_str().map(String::from);
+        let client_secret = token_json["client_secret"].as_str().map(String::from);
+        let expires_in = token_json["expires_in"].as_u64();
+        let refresh_token = token_json["refresh_token"].as_str().map(String::from);
+
         return Ok(Config {
-            access_token: String::from(token_json["access_token"].as_str().unwrap()),
-            client_id: String::from(token_json["client_id"].as_str().unwrap()),
-            client_secret: String::from(token_json["client_secret"].as_str().unwrap()),
-            expires_in: token_json["expires_in"].as_u64().unwrap(),
-            refresh_token: String::from(token_json["refresh_token"].as_str().unwrap()),
+            access_token: try!(access_token.ok_or(Error::ConfigError(String::from("access_token")))),
+            client_id: try!(client_id.ok_or(Error::ConfigError(String::from("client_id")))),
+            client_secret: try!(client_secret.ok_or(Error::ConfigError(String::from("client_secret")))),
+            expires_in: try!(expires_in.ok_or(Error::ConfigError(String::from("expires_in")))),
+            refresh_token: try!(refresh_token.ok_or(Error::ConfigError(String::from("refresh_token")))),
         });
     }
 
@@ -59,7 +65,7 @@ impl Config {
         let filepath = gphoto_dir.as_path().join(profile);
         let mut file = try!(fs::File::create(filepath));
 
-        file.write_all(cfg.to_string().as_bytes()).unwrap();
+        try!(file.write_all(cfg.to_string().as_bytes()));
 
         return Ok(());
     }

@@ -20,6 +20,7 @@ use std::io::{self, Write};
 use docopt::Docopt;
 
 use cmd::execute;
+use error::Error;
 
 const USAGE: &'static str = r#"
 Google Photo Uploader.
@@ -27,9 +28,9 @@ Google Photo Uploader.
 Usage:
   gphoto init <clinet-id> [--secret=<secret>]
   gphoto refresh
-  gphoto albums
-  gphoto photos [--album=<album>] [--max=<max>]
-  gphoto up <file> [--name=<name>] [--album=<album>]
+  gphoto albums [--user-id=<user-id>]
+  gphoto photos [--album=<album>] [--max=<max>] [--user-id=<user-id>]
+  gphoto up <file> [--name=<name>] [--album=<album>] [--user-id=<user-id>]
   gphoto (-h | --help)
 Options:
   -h, --help     Show this screen.
@@ -37,6 +38,7 @@ Options:
   --album=<album>  Sepcify name of album.
   --max=<max>  Sepcify max results of photos [default: 10].
   --name=<name>  Sepcify name of photo.
+  --user-id=<user-id> Specify user id of Google [default: "default"].
 "#;
 
 #[derive(Debug, RustcDecodable)]
@@ -45,6 +47,7 @@ pub struct Args {
     flag_album: Option<String>,
     flag_max: Option<String>,
     flag_name: Option<String>,
+    flag_user_id: Option<String>,
     arg_clinet_id: Option<String>,
     arg_file: Option<String>,
     cmd_init: bool,
@@ -62,11 +65,11 @@ fn main() {
 
     match execute(&args) {
         Ok(_) => (),
-        Err(ref e) => abort(format!("{}", e).as_str()),
+        Err(ref e) => abort(e),
     };
 }
 
-pub fn abort(why: &str) {
-    write!(&mut io::stderr(), "{}", why).unwrap();
+pub fn abort(e: &Error) {
+    writeln!(&mut io::stderr(), "{}", e).unwrap();
     ::std::process::exit(1)
 }

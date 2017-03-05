@@ -30,7 +30,10 @@ fn image_mime_type(filename: &Path) -> Option<mime::Mime> {
 pub fn execute_up(args: &Args) -> Result<(), Error> {
     let config = try!(Config::load("default"));
 
-    let user_id = "default";
+    let user_id = match args.flag_user_id {
+        Some(ref user_id) => user_id,
+        _ => "default",
+    };
     let url = match args.flag_album {
         Some(ref album_id) => format!("https://picasaweb.google.com/data/feed/api/user/{}/albumid/{}", user_id, album_id),
         _ => format!("https://picasaweb.google.com/data/feed/api/user/{}", user_id),
@@ -38,11 +41,11 @@ pub fn execute_up(args: &Args) -> Result<(), Error> {
 
     let filepath = match args.arg_file {
         Some(ref file) => Path::new(file),
-        _ => panic!("specify up file"),
+        _ => panic!("specify file"),
     };
 
     let mut file: File = try!(File::open(&filepath));
-    let size = file.metadata().unwrap().len();
+    let size = file.metadata()?.len();
 
     let mime_type = image_mime_type(&filepath)
         .unwrap_or("application/octet-stream".parse().unwrap());
@@ -62,8 +65,9 @@ pub fn execute_up(args: &Args) -> Result<(), Error> {
     };
 
     let res = try!(req.send());
-
-    println!("{}", res.status);
+    if !res.status.is_success() {
+        return Err(Error::HttpError(res.status));
+    }
 
     return Ok(());
 }

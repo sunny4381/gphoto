@@ -17,6 +17,7 @@ pub enum Error {
     HttpError(hyper::status::StatusCode),
     SerdeError(serde_json::error::Error),
     NativeTlsError(native_tls::Error),
+    ConfigError(String),
     UnknownCommandError,
 }
 
@@ -29,6 +30,7 @@ impl fmt::Display for Error {
             Error::HttpError(ref status) => write!(f, "HTTP error: {}", status),
             Error::SerdeError(ref err) => write!(f, "Serde error: {}", err),
             Error::NativeTlsError(ref err) => write!(f, "NativeTls error: {}", err),
+            Error::ConfigError(ref msg) => write!(f, "Config error: {}", msg),
             Error::UnknownCommandError => write!(f, "Unknown Command"),
         }
     }
@@ -45,6 +47,7 @@ impl error::Error for Error {
             Error::HttpError(ref status) => status.canonical_reason().unwrap(),
             Error::SerdeError(ref err) => err.description(),
             Error::NativeTlsError(ref err) => err.description(),
+            Error::ConfigError(ref msg) => msg.as_str(),
             Error::UnknownCommandError => "unknown command",
         }
     }
@@ -61,6 +64,7 @@ impl error::Error for Error {
             Error::HttpError(_) => None,
             Error::SerdeError(ref err) => Some(err),
             Error::NativeTlsError(ref err) => Some(err),
+            Error::ConfigError(_) => None,
             Error::UnknownCommandError => None,
         }
     }

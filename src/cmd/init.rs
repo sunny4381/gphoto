@@ -5,10 +5,6 @@ use goauth::{auth_url, auth_token};
 use error::Error;
 use config::Config;
 
-// fn flush_stdout() -> Result<(), Error> {
-//     try!(io::stdout().flush());
-//     return Ok(());
-// }
 fn prompt(label: &str) -> Result<(), Error> {
     print!("put your {}: ", label);
     try!(io::stdout().flush());
