@@ -28,6 +28,7 @@ Google Photo Uploader.
 Usage:
   gphoto init <clinet-id> [--secret=<secret>]
   gphoto refresh
+  gphoto whoami
   gphoto albums [--user-id=<user-id>]
   gphoto photos [--album=<album>] [--max=<max>] [--user-id=<user-id>]
   gphoto up <file> [--name=<name>] [--album=<album>] [--user-id=<user-id>]
@@ -52,6 +53,7 @@ pub struct Args {
     arg_file: Option<String>,
     cmd_init: bool,
     cmd_refresh: bool,
+    cmd_whoami: bool,
     cmd_albums: bool,
     cmd_photos: bool,
     cmd_up: bool,
