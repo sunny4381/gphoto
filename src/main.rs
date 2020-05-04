@@ -29,24 +29,21 @@ Usage:
   gphoto init <clinet-id> [--secret=<secret>]
   gphoto refresh
   gphoto whoami
-  gphoto albums [--user-id=<user-id>]
-  gphoto photos [--album=<album>] [--max=<max>] [--user-id=<user-id>]
-  gphoto up <file> [--name=<name>] [--album=<album>] [--user-id=<user-id>]
+  gphoto albums
+  gphoto photos [--album=<album>]
+  gphoto up <file> [--name=<name>] [--album=<album>]
   gphoto (-h | --help)
 Options:
   -h, --help     Show this screen.
   --secret=<secret> Specify client secret.
   --album=<album>  Sepcify name of album.
-  --max=<max>  Sepcify max results of photos [default: 10].
   --name=<name>  Sepcify name of photo.
-  --user-id=<user-id> Specify user id of Google [default: "default"].
 "#;
 
 #[derive(Debug, RustcDecodable)]
 pub struct Args {
     flag_secret: Option<String>,
     flag_album: Option<String>,
-    flag_max: Option<String>,
     flag_name: Option<String>,
     flag_user_id: Option<String>,
     arg_clinet_id: Option<String>,

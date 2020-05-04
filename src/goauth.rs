@@ -9,14 +9,16 @@ use serde_json;
 
 use error::Error;
 
+use mime;
+
 pub const AUTH_URL: &'static str = "https://accounts.google.com/o/oauth2/v2/auth";
 pub const TOKEN_URL: &'static str = "https://www.googleapis.com/oauth2/v4/token";
 pub const INFO_URL: &'static str = "https://www.googleapis.com/oauth2/v1/userinfo";
 pub const REDIRECT_URI: &'static str = "urn:ietf:wg:oauth:2.0:oob";
 pub const USER_AGENT: &'static str = "rust-oauth-test/0.1";
 
-header! { (GDataVersion, "GData-Version") => [String] }
-header! { (Slug, "Slug") => [String] }
+header! { (XGoogUploadContentType, "X-Goog-Upload-Content-Type") => [mime::Mime] }
+header! { (XGoogUploadProtocol, "X-Goog-Upload-Protocol") => [String] }
 
 #[derive(Debug, RustcDecodable)]
 pub struct Token {
@@ -46,7 +48,7 @@ pub fn auth_url(client_id: &str) -> String {
         .append_pair("client_id", client_id)
         .append_pair("redirect_uri", REDIRECT_URI)
         .append_pair("response_type", "code")
-        .append_pair("scope", "profile email http://picasaweb.google.com/data/")
+        .append_pair("scope", "profile email https://www.googleapis.com/auth/photoslibrary")
         .finish();
     return format!("{}?{}", AUTH_URL, auth_params);
 }

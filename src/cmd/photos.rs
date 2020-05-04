@@ -1,5 +1,5 @@
 use hyper;
-use hyper::header::{UserAgent, Authorization};
+use hyper::header::{ContentType, UserAgent, Authorization};
 
 use url::form_urlencoded;
 
@@ -8,60 +8,105 @@ use serde_json;
 use time::{self, Timespec};
 
 use super::Args;
-use goauth::{client, USER_AGENT, GDataVersion};
+use goauth::{client, USER_AGENT};
 use config::Config;
 use error::Error;
 
-pub fn execute_photos(args: &Args) -> Result<(), Error> {
-    let config = try!(Config::load("default"));
+const MEDIA_ITEM_LIST_URL: &'static str = "https://photoslibrary.googleapis.com/v1/mediaItems";
+const MEDIA_ITEM_SEARCH_URL: &'static str = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
 
-    let user_id = match args.flag_user_id {
-        Some(ref user_id) => user_id,
-        _ => "default",
+fn puts_media_items(items: &Vec<serde_json::Value>) {
+    for item in items {
+        let id = item["id"].as_str();
+        let description = item["description"].as_str();
+        let mime_type = item["mimeType"].as_str();
+        let timestamp = item["mediaMetadata"]["creationTime"].as_str();
+        let width = item["mediaMetadata"]["width"].as_str();
+        let height = item["mediaMetadata"]["height"].as_str();
+        let filename = item["filename"].as_str();
+        println!("{}\t{}\t{}\t{}\t{}x{}\t{}", id.unwrap_or(""), description.unwrap_or(""), mime_type.unwrap_or(""), timestamp.unwrap_or(""), width.unwrap_or(""), height.unwrap_or(""), filename.unwrap_or(""));
+    }
+}
+
+fn list_all_library_contents(client: &hyper::Client, access_token: &str, token: Option<&str>) -> Result<(), Error> {
+    let base_req = match token {
+        Some(t) => {
+            let next_url_params: String = form_urlencoded::Serializer::new(String::new())
+                .append_pair("pageToken", t)
+                .finish();
+            let url = format!("{}?{}", MEDIA_ITEM_LIST_URL, next_url_params);
+            client.get(&url)
+        },
+        _ => client.get(MEDIA_ITEM_LIST_URL)
     };
-    let url = match args.flag_album {
-        Some(ref album_id) => format!("https://picasaweb.google.com/data/feed/api/user/{}/albumid/{}", user_id, album_id),
-        _ => format!("https://picasaweb.google.com/data/feed/api/user/{}", user_id),
-    };
-
-    let params: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("kind", "photo")
-        .append_pair("alt", "json")
-        .append_pair("max-results", &args.flag_max.clone().unwrap_or("10".to_string()))
-        .finish();
-
-    let client = client().unwrap();
-    let res = try!(client.get(&format!("{}?{}", url, params))
-        .header(Authorization(format!("Bearer {}", config.access_token)))
-        .header(GDataVersion("3".to_string()))
-        .header(UserAgent(USER_AGENT.to_owned()))
-        .send());
+    let req = base_req.header(Authorization(format!("Bearer {}", access_token)))
+        .header(UserAgent(USER_AGENT.to_owned()));
+    let res = try!(req.send());
 
     if res.status != hyper::status::StatusCode::Ok {
         return Err(Error::HttpError(res.status));
     }
 
-    let photos_json: serde_json::Value = try!(serde_json::from_reader(res));
-
-    match photos_json["feed"]["entry"].as_array() {
-        Some(entries) => {
-            for entry in entries {
-                let id = entry["gphoto$id"]["$t"].as_str();
-                let title = entry["title"]["$t"].as_str();
-                let access = entry["gphoto$access"]["$t"].as_str();
-                let timestamp = entry["gphoto$timestamp"]["$t"].as_str();
-                let width = entry["gphoto$width"]["$t"].as_str();
-                let height = entry["gphoto$height"]["$t"].as_str();
-                let size = entry["gphoto$size"]["$t"].as_str();
-                let tm = timestamp.map(|v| v.parse::<i64>().unwrap())
-                    .map(|v| Timespec { sec: v / 1000, nsec: (v % 1000) as i32 })
-                    .map(|v| time::at_utc(v))
-                    .map(|v| time::strftime("%FT%TZ", &v).unwrap());
-                println!("{}\t{}\t{}\t{}\t{}x{}\t{}", id.unwrap_or(""), title.unwrap_or(""), access.unwrap_or(""), &tm.unwrap_or("".to_string()), width.unwrap_or(""), height.unwrap_or(""), size.unwrap_or(""));
+    let response: serde_json::Value = try!(serde_json::from_reader(res));
+    match response["mediaItems"].as_array() {
+        Some(items) => puts_media_items(items),
+        _ => {
+            if token.is_none() {
+                println!("no photos were found");
             }
-        },
-        _ => println!("no photos were found")
+        }
     }
 
-    return Ok(());
+    if let Some(next_token) = response["nextPageToken"].as_str() {
+        return list_all_library_contents(client, access_token, Some(next_token));
+    }
+
+    Ok(())
+}
+
+fn list_all_album_contents(client: &hyper::Client, access_token: &str, album_id: &str, token: Option<&str>) -> Result<(), Error> {
+    let mut request_builder = form_urlencoded::Serializer::new(String::new());
+    request_builder.append_pair("albumId", album_id);
+    if let Some(t) = token {
+        request_builder.append_pair("pageToken", t);
+    }
+    let request_body: String = request_builder.finish();
+
+    let request = client.post(MEDIA_ITEM_SEARCH_URL)
+        .header(Authorization(format!("Bearer {}", access_token)))
+        .header(UserAgent(USER_AGENT.to_owned()))
+        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
+        .body(&request_body);
+
+    let res = try!(request.send());
+
+    if res.status != hyper::status::StatusCode::Ok {
+        return Err(Error::HttpError(res.status));
+    }
+
+    let response: serde_json::Value = try!(serde_json::from_reader(res));
+    match response["mediaItems"].as_array() {
+        Some(items) => puts_media_items(items),
+        _ => {
+            if token.is_none() {
+                println!("no photos were found");
+            }
+        }
+    }
+
+    if let Some(next_token) = response["nextPageToken"].as_str() {
+        return list_all_album_contents(client, access_token, album_id, Some(next_token));
+    }
+
+    Ok(())
+}
+
+pub fn execute_photos(args: &Args) -> Result<(), Error> {
+    let config = try!(Config::load("default"));
+    let client = client().unwrap();
+
+    match args.flag_album {
+        Some(ref album_id) => list_all_album_contents(&client, &config.access_token, album_id, None),
+        _ => list_all_library_contents(&client, &config.access_token, None)
+    }
 }
