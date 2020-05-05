@@ -1,9 +1,10 @@
-use super::Args;
+use clap::ArgMatches;
+
 use goauth;
 use config::Config;
 use error::Error;
 
-pub fn execute_refresh(_: &Args) -> Result<(), Error> {
+pub fn execute_refresh(_args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
     let token = goauth::refresh_token(&config.client_id, &config.client_secret, &config.refresh_token)?;
 

@@ -1,4 +1,5 @@
-extern crate docopt;
+#[macro_use]
+extern crate clap;
 extern crate env_logger;
 extern crate rustc_serialize;
 #[macro_use]
@@ -16,52 +17,50 @@ mod error;
 mod goauth;
 
 use std::io::{self, Write};
-use docopt::Docopt;
 
 use cmd::execute;
 use error::Error;
 
-const USAGE: &'static str = r#"
-Google Photo Uploader.
-
-Usage:
-  gphoto init <clinet-id> [--secret=<secret>]
-  gphoto refresh
-  gphoto whoami
-  gphoto albums
-  gphoto album-create --name=<name>
-  gphoto photos [--album=<album>]
-  gphoto up <file> [--name=<name>] [--album=<album>]
-  gphoto (-h | --help)
-Options:
-  -h, --help     Show this screen.
-  --secret=<secret> Specify client secret.
-  --album=<album>  Sepcify name of album.
-  --name=<name>  Sepcify name of photo.
-"#;
-
-#[derive(Debug, RustcDecodable)]
-pub struct Args {
-    flag_secret: Option<String>,
-    flag_album: Option<String>,
-    flag_name: Option<String>,
-    flag_user_id: Option<String>,
-    arg_clinet_id: Option<String>,
-    arg_file: Option<String>,
-    cmd_init: bool,
-    cmd_refresh: bool,
-    cmd_whoami: bool,
-    cmd_albums: bool,
-    cmd_album_create: bool,
-    cmd_photos: bool,
-    cmd_up: bool,
-}
-
 fn main() {
+    let args = clap_app!(myapp =>
+        (author: "NAKANO Hideo. <pinarello.marvel@gmail.com>")
+        (about: "Google Photo Uploader")
+        (@subcommand init =>
+            (about: "initialize environment")
+            (@arg client_id: +required "client id")
+            (@arg client_secret: +required "client secret")
+        )
+        (@subcommand refresh =>
+            (about: "refresh access token")
+        )
+        (@subcommand whoami =>
+            (about: "print who am I")
+        )
+        (@subcommand albums =>
+            (@subcommand list =>
+                (about: "show all albums")
+            )
+            (@subcommand create =>
+                (about: "create new album")
+                (@arg name: +required "album name")
+            )
+        )
+        (@subcommand photos =>
+            (@subcommand list =>
+                (about: "show all photos")
+                (@arg album_id: --album_id "album id to show")
+            )
+            (@subcommand up =>
+                (about: "upload photo")
+                (@arg file: +required "file to upload")
+                (@arg description: --description "photo description")
+                (@arg album_id: --album_id "album id to put")
+                (@arg filename: --filename "filename of photo")
+            )
+        )
+    ).get_matches();
+
     env_logger::init().unwrap();
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
 
     match execute(&args) {
         Ok(_) => (),

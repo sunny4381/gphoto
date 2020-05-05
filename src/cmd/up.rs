@@ -2,11 +2,12 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+use clap::ArgMatches;
+
 use hyper::header::{UserAgent, Authorization, ContentType};
 
 use mime;
 
-use super::Args;
 use goauth::{client, USER_AGENT, XGoogUploadContentType, XGoogUploadProtocol};
 use config::Config;
 use error::Error;
@@ -59,13 +60,13 @@ fn upload_image(client: &hyper::Client, access_token: &str, filepath: &Path) -> 
     Ok(token)
 }
 
-fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path, name: &Option<&str>, album_id: &Option<&str>, upload_token: &str) -> Result<(), Error> {
+fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path, description: &Option<&str>, album_id: &Option<&str>, filename: &Option<&str>, upload_token: &str) -> Result<(), Error> {
     let mut request_body = json!({
         "newMediaItems": [
             {
-                "description": name.unwrap_or_else(|| filepath.file_name().unwrap().to_str().unwrap()),
+                "description": description.unwrap_or_else(|| filepath.file_name().unwrap().to_str().unwrap()),
                 "simpleMediaItem": {
-                    "fileName": filepath.file_name().unwrap().to_str().unwrap_or("filename.png"),
+                    "fileName": filename.unwrap_or_else(|| filepath.file_name().unwrap().to_str().unwrap_or("filename.png")),
                     "uploadToken": upload_token
                 }
             }
@@ -92,18 +93,19 @@ fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path
     Ok(())
 }
 
-pub fn execute_up(args: &Args) -> Result<(), Error> {
+pub fn execute_up(args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
 
-    let filepath = match args.arg_file {
-        Some(ref file) => Path::new(file),
+    let filepath = match args.value_of("file") {
+        Some(file) => Path::new(file),
         _ => panic!("specify file"),
     };
-    let name: Option<&str> = args.flag_name.as_ref().map(|s| s.as_str());
-    let album_id: Option<&str> = args.flag_album.as_ref().map(|s| s.as_str());
+    let description: Option<&str> = args.value_of("description");
+    let album_id: Option<&str> = args.value_of("album_id");
+    let filename: Option<&str> = args.value_of("filename");
 
     let client = client()?;
 
     let upload_token = upload_image(&client, &config.access_token, &filepath)?;
-    create_media_item(&client, &config.access_token, filepath, &name, &album_id, upload_token.as_str())
+    create_media_item(&client, &config.access_token, filepath, &description, &album_id, &filename, upload_token.as_str())
 }

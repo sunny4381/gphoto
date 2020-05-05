@@ -1,6 +1,6 @@
 use std::io::{self,BufRead,Write};
+use clap::ArgMatches;
 
-use super::Args;
 use goauth::{auth_url, auth_token};
 use error::Error;
 use config::Config;
@@ -45,15 +45,15 @@ fn read_code(client_id: &str) -> Result<String, Error> {
     }
 }
 
-pub fn execute_init(args: &Args) -> Result<(), Error> {
-    let client_id = match args.arg_clinet_id {
-        Some(ref clinet_id) => Ok(clinet_id.clone()),
-        _ => read_from_stdin("client id"),
-    }?;
-    let client_secret = match args.flag_secret {
-        Some(ref client_secret) => Ok(client_secret.clone()),
-        _ => read_from_stdin("client secret"),
-    }?;
+pub fn execute_init(args: &ArgMatches) -> Result<(), Error> {
+    let client_id: String = match args.value_of("client_id") {
+        Some(client_id) => String::from(client_id),
+        _ => read_from_stdin("client id")?,
+    };
+    let client_secret: String = match args.value_of("client_secret") {
+        Some(client_secret) => String::from(client_secret),
+        _ => read_from_stdin("client secret")?,
+    };
 
     let code = read_code(&client_id)?;
     let token = auth_token(&client_id, &client_secret, &code)?;

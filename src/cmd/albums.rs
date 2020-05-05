@@ -1,3 +1,5 @@
+use clap::ArgMatches;
+
 use hyper::header::{UserAgent, Authorization};
 
 use hyper;
@@ -6,7 +8,6 @@ use serde_json;
 
 use url::form_urlencoded;
 
-use super::Args;
 use goauth::{client, USER_AGENT};
 use config::Config;
 use error::Error;
@@ -53,7 +54,7 @@ fn puts_albums_and_next(client: &Client, access_token: &str, url: &str) -> Resul
     Ok(())
 }
 
-pub fn execute_albums(_args: &Args) -> Result<(), Error> {
+pub fn execute_albums(_args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
     let access_token = config.access_token;
 

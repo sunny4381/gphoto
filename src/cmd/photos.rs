@@ -1,3 +1,5 @@
+use clap::ArgMatches;
+
 use hyper;
 use hyper::header::{ContentType, UserAgent, Authorization};
 
@@ -5,7 +7,6 @@ use url::form_urlencoded;
 
 use serde_json;
 
-use super::Args;
 use goauth::{client, USER_AGENT};
 use config::Config;
 use error::Error;
@@ -99,12 +100,12 @@ fn list_all_album_contents(client: &hyper::Client, access_token: &str, album_id:
     Ok(())
 }
 
-pub fn execute_photos(args: &Args) -> Result<(), Error> {
+pub fn execute_photos(args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
     let client = client().unwrap();
 
-    match args.flag_album {
-        Some(ref album_id) => list_all_album_contents(&client, &config.access_token, album_id, None),
+    match args.value_of("album_id") {
+        Some(album_id) => list_all_album_contents(&client, &config.access_token, album_id, None),
         _ => list_all_library_contents(&client, &config.access_token, None)
     }
 }

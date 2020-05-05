@@ -1,17 +1,15 @@
+use clap::ArgMatches;
+
 use hyper::header::{UserAgent, Authorization, ContentType};
 
-use super::Args;
 use goauth::{client, USER_AGENT};
 use config::Config;
 use error::Error;
 
 const ALBUM_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/albums";
 
-pub fn execute_album_create(args: &Args) -> Result<(), Error> {
-    let name = match args.flag_name {
-        Some(ref name) => name,
-        _ => panic!("specify album name"),
-    };
+pub fn execute_album_create(args: &ArgMatches) -> Result<(), Error> {
+    let name = args.value_of("name").unwrap_or_else(|| panic!("specify album name"));
 
     let config = Config::load("default")?;
     let access_token = config.access_token;
