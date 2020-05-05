@@ -77,7 +77,6 @@ fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path
     }
 
     let request_json = request_body.to_string();
-    println!("request json = {}", request_json);
 
     let req = client.post(MEDIA_ITEM_CREATE_API_URL)
         .header(Authorization(format!("Bearer {}", access_token)))

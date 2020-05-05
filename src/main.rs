@@ -30,6 +30,7 @@ Usage:
   gphoto refresh
   gphoto whoami
   gphoto albums
+  gphoto album-create --name=<name>
   gphoto photos [--album=<album>]
   gphoto up <file> [--name=<name>] [--album=<album>]
   gphoto (-h | --help)
@@ -52,6 +53,7 @@ pub struct Args {
     cmd_refresh: bool,
     cmd_whoami: bool,
     cmd_albums: bool,
+    cmd_album_create: bool,
     cmd_photos: bool,
     cmd_up: bool,
 }
