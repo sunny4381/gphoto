@@ -8,7 +8,6 @@ extern crate native_tls;
 #[macro_use]
 extern crate serde_json;
 extern crate url;
-extern crate time;
 extern crate mime;
 
 mod cmd;
