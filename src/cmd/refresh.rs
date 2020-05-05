@@ -4,8 +4,8 @@ use config::Config;
 use error::Error;
 
 pub fn execute_refresh(_: &Args) -> Result<(), Error> {
-    let config = try!(Config::load("default"));
-    let token = try!(goauth::refresh_token(&config.client_id, &config.client_secret, &config.refresh_token));
+    let config = Config::load("default")?;
+    let token = goauth::refresh_token(&config.client_id, &config.client_secret, &config.refresh_token)?;
 
     let new_config = Config {
         client_id: config.client_id,
@@ -14,7 +14,7 @@ pub fn execute_refresh(_: &Args) -> Result<(), Error> {
         expires_in: token.expires_in,
         refresh_token: config.refresh_token,
     };
-    try!(new_config.save("default"));
+    new_config.save("default")?;
 
     return Ok(());
 }

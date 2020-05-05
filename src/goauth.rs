@@ -39,7 +39,7 @@ pub struct UserInfo {
 }
 
 pub fn client() -> Result<Client, Error> {
-    let ssl = try!(NativeTlsClient::new().map_err(Error::NativeTlsError));
+    let ssl = NativeTlsClient::new().map_err(Error::NativeTlsError)?;
     return Ok(Client::with_connector(HttpsConnector::new(ssl)));
 }
 
@@ -62,16 +62,16 @@ pub fn auth_token(client_id: &str, client_secret: &str, code: &str) -> Result<To
         .append_pair("grant_type", "authorization_code")
         .finish();
 
-    let client = try!(client());
+    let client = client()?;
     let req = client.post(TOKEN_URL)
         .body(&token_body)
         .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
         .header(UserAgent(USER_AGENT.to_owned()));
     
-    let res = try!(req.send());
+    let res = req.send()?;
 
     let token_body: serde_json::Value = if res.status.is_success() {
-        try!(serde_json::from_reader(res))
+        serde_json::from_reader(res)?
     } else {
         return Err(Error::HttpError(res.status))
     };
@@ -93,16 +93,16 @@ pub fn refresh_token(client_id: &str, client_secret: &str, refresh_token: &str) 
         .append_pair("grant_type", "refresh_token")
         .finish();
 
-    let client = try!(client());
+    let client = client()?;
     let req = client.post(TOKEN_URL)
         .body(&refresh_body)
         .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
         .header(UserAgent(USER_AGENT.to_owned()));
     
-    let res = try!(req.send());
+    let res = req.send()?;
 
     let refresh_body: serde_json::Value = if res.status.is_success() {
-        try!(serde_json::from_reader(res))
+        serde_json::from_reader(res)?
     } else {
         return Err(Error::HttpError(res.status))
     };
@@ -117,16 +117,16 @@ pub fn refresh_token(client_id: &str, client_secret: &str, refresh_token: &str) 
 }
 
 pub fn user_info(access_token: &str) -> Result<UserInfo, Error> {
-    let client = try!(client());
+    let client = client()?;
 
     let info_req = client.get(INFO_URL)
         .header(Authorization(format!("Bearer {}", access_token)))
         .header(UserAgent(USER_AGENT.to_owned()));
     
-    let info_res = try!(info_req.send());
+    let info_res = info_req.send()?;
 
     let info_body: serde_json::Value = if info_res.status.is_success() {
-        try!(serde_json::from_reader(info_res))
+        serde_json::from_reader(info_res)?
     } else {
         return Err(Error::HttpError(info_res.status))
     };

@@ -5,8 +5,6 @@ use url::form_urlencoded;
 
 use serde_json;
 
-use time::{self, Timespec};
-
 use super::Args;
 use goauth::{client, USER_AGENT};
 use config::Config;
@@ -41,13 +39,13 @@ fn list_all_library_contents(client: &hyper::Client, access_token: &str, token: 
     };
     let req = base_req.header(Authorization(format!("Bearer {}", access_token)))
         .header(UserAgent(USER_AGENT.to_owned()));
-    let res = try!(req.send());
+    let res = req.send()?;
 
     if res.status != hyper::status::StatusCode::Ok {
         return Err(Error::HttpError(res.status));
     }
 
-    let response: serde_json::Value = try!(serde_json::from_reader(res));
+    let response: serde_json::Value = serde_json::from_reader(res)?;
     match response["mediaItems"].as_array() {
         Some(items) => puts_media_items(items),
         _ => {
@@ -78,13 +76,13 @@ fn list_all_album_contents(client: &hyper::Client, access_token: &str, album_id:
         .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
         .body(&request_body);
 
-    let res = try!(request.send());
+    let res = request.send()?;
 
     if res.status != hyper::status::StatusCode::Ok {
         return Err(Error::HttpError(res.status));
     }
 
-    let response: serde_json::Value = try!(serde_json::from_reader(res));
+    let response: serde_json::Value = serde_json::from_reader(res)?;
     match response["mediaItems"].as_array() {
         Some(items) => puts_media_items(items),
         _ => {
@@ -102,7 +100,7 @@ fn list_all_album_contents(client: &hyper::Client, access_token: &str, album_id:
 }
 
 pub fn execute_photos(args: &Args) -> Result<(), Error> {
-    let config = try!(Config::load("default"));
+    let config = Config::load("default")?;
     let client = client().unwrap();
 
     match args.flag_album {

@@ -1,5 +1,4 @@
 use std::env;
-use std::error;
 use std::io;
 use std::fmt;
 
@@ -32,40 +31,6 @@ impl fmt::Display for Error {
             Error::NativeTlsError(ref err) => write!(f, "NativeTls error: {}", err),
             Error::ConfigError(ref msg) => write!(f, "Config error: {}", msg),
             Error::UnknownCommandError => write!(f, "Unknown Command"),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        // 下層のエラーは両方ともすでに `Error` を実装しているので、
-        // それらの実装に従います。
-        match *self {
-            Error::EnvError(ref err) => err.description(),
-            Error::IoError(ref err) => err.description(),
-            Error::HyperError(ref err) => err.description(),
-            Error::HttpError(ref status) => status.canonical_reason().unwrap(),
-            Error::SerdeError(ref err) => err.description(),
-            Error::NativeTlsError(ref err) => err.description(),
-            Error::ConfigError(ref msg) => msg.as_str(),
-            Error::UnknownCommandError => "unknown command",
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            // 注意：これらは両方とも `err` を、その具象型（`&io::Error` か
-            // `&num::ParseIntError` のいずれか）から、トレイトオブジェクト
-            // `&Error` へ暗黙的にキャストします。どちらのエラー型も `Error` を
-            // 実装しているので、問題なく動きます。
-            Error::EnvError(ref err) => Some(err),
-            Error::IoError(ref err) => Some(err),
-            Error::HyperError(ref err) => Some(err),
-            Error::HttpError(_) => None,
-            Error::SerdeError(ref err) => Some(err),
-            Error::NativeTlsError(ref err) => Some(err),
-            Error::ConfigError(_) => None,
-            Error::UnknownCommandError => None,
         }
     }
 }
