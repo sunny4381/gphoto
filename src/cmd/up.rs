@@ -3,12 +3,11 @@ use std::io::Read;
 use std::path::Path;
 
 use clap::ArgMatches;
-
-use hyper::header::{UserAgent, Authorization, ContentType};
-
+use reqwest;
+use reqwest::blocking::Client;
 use mime;
 
-use goauth::{client, USER_AGENT, XGoogUploadContentType, XGoogUploadProtocol};
+use goauth::USER_AGENT;
 use config::Config;
 use error::Error;
 
@@ -19,11 +18,11 @@ fn image_mime_type(filename: &Path) -> Option<mime::Mime> {
     match filename.extension() {
         Some(os_str) => {
             if os_str == "gif" {
-                Some("image/gif".parse().unwrap())
+                Some(mime::IMAGE_GIF)
             } else if os_str == "png" {
-                Some("image/png".parse().unwrap())
+                Some(mime::IMAGE_PNG)
             } else if os_str == "jpg" || os_str == "jpeg" {
-                Some("image/jpeg".parse().unwrap())
+                Some(mime::IMAGE_JPEG)
             } else {
                 None
             }
@@ -32,35 +31,35 @@ fn image_mime_type(filename: &Path) -> Option<mime::Mime> {
     }
 }
 
-fn upload_image(client: &hyper::Client, access_token: &str, filepath: &Path) -> Result<String, Error> {
-    let mime_type = image_mime_type(&filepath)
-        .unwrap_or("application/octet-stream".parse().unwrap());
+fn upload_image(client: &Client, access_token: &str, filepath: &Path) -> Result<String, Error> {
+    let mime_type: mime::Mime = image_mime_type(&filepath)
+        .unwrap_or(mime::APPLICATION_OCTET_STREAM);
 
-    let mut file: File = File::open(&filepath)?;
+    let file: File = File::open(&filepath)?;
 
-    let request = client.post(UPLOAD_API_URL)
-        .header(Authorization(format!("Bearer {}", access_token)))
-        .header(UserAgent(USER_AGENT.to_owned()))
-        .header(ContentType("application/octet-stream".parse().unwrap()))
-        .header(XGoogUploadContentType(mime_type))
-        .header(XGoogUploadProtocol("raw".to_string()))
-        .body(&mut file);
+    let req = client.post(UPLOAD_API_URL)
+        .bearer_auth(access_token)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+        .header("X-Goog-Upload-Content-Type", mime_type.as_ref())
+        .header("X-Goog-Upload-Protocol", "raw")
+        .body(file);
 
-    let mut res = request.send()?;
-    if res.status != hyper::status::StatusCode::Ok {
-        return Err(Error::HttpError(res.status));
+    let mut res = req.send()?;
+    if !res.status().is_success() {
+        return Err(Error::from(res));
     }
 
-    let mut token = String::new();
-    let size = res.read_to_string(&mut token)?;
+    let mut upload_token = String::new();
+    let size = res.read_to_string(&mut upload_token)?;
     if size == 0 {
-        return Ok("".to_string());
+        panic!("unable to get upload token");
     }
 
-    Ok(token)
+    Ok(upload_token)
 }
 
-fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path, description: &Option<&str>, album_id: &Option<&str>, filename: &Option<&str>, upload_token: &str) -> Result<(), Error> {
+fn create_media_item(client: &Client, access_token: &str, filepath: &Path, description: &Option<&str>, album_id: &Option<&str>, filename: &Option<&str>, upload_token: &str) -> Result<(), Error> {
     let mut request_body = json!({
         "newMediaItems": [
             {
@@ -77,17 +76,17 @@ fn create_media_item(client: &hyper::Client, access_token: &str, filepath: &Path
         request_body.as_object_mut().unwrap().insert(String::from("albumId"), json!(id));
     }
 
-    let request_json = request_body.to_string();
+    let request_json: String = request_body.to_string();
 
     let req = client.post(MEDIA_ITEM_CREATE_API_URL)
-        .header(Authorization(format!("Bearer {}", access_token)))
-        .header(UserAgent(USER_AGENT.to_owned()))
-        .header(ContentType("application/json".parse().unwrap()))
-        .body(request_json.as_str());
+        .bearer_auth(access_token)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(request_json);
 
     let res = req.send()?;
-    if res.status != hyper::status::StatusCode::Ok {
-        return Err(Error::HttpError(res.status));
+    if !res.status().is_success() {
+        return Err(Error::from(res));
     }
 
     Ok(())
@@ -104,7 +103,7 @@ pub fn execute_up(args: &ArgMatches) -> Result<(), Error> {
     let album_id: Option<&str> = args.value_of("album_id");
     let filename: Option<&str> = args.value_of("filename");
 
-    let client = client()?;
+    let client = Client::new();
 
     let upload_token = upload_image(&client, &config.access_token, &filepath)?;
     create_media_item(&client, &config.access_token, filepath, &description, &album_id, &filename, upload_token.as_str())

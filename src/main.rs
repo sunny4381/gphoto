@@ -1,15 +1,14 @@
 #[macro_use]
 extern crate clap;
 extern crate env_logger;
+extern crate mime;
+extern crate reqwest;
 extern crate rustc_serialize;
 #[macro_use]
-extern crate hyper;
-extern crate hyper_native_tls;
-extern crate native_tls;
+extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 extern crate url;
-extern crate mime;
 
 mod cmd;
 mod config;
@@ -60,7 +59,7 @@ fn main() {
         )
     ).get_matches();
 
-    env_logger::init().unwrap();
+    env_logger::init();
 
     match execute(&args) {
         Ok(_) => (),

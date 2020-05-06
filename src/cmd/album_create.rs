@@ -1,8 +1,7 @@
 use clap::ArgMatches;
+use reqwest;
 
-use hyper::header::{UserAgent, Authorization, ContentType};
-
-use goauth::{client, USER_AGENT};
+use goauth::USER_AGENT;
 use config::Config;
 use error::Error;
 
@@ -14,7 +13,7 @@ pub fn execute_album_create(args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
     let access_token = config.access_token;
 
-    let client = client()?;
+    let client = reqwest::blocking::Client::new();
 
     let request_body = json!({
         "album": {
@@ -23,14 +22,14 @@ pub fn execute_album_create(args: &ArgMatches) -> Result<(), Error> {
     });
     let request_json = request_body.to_string();
     let req = client.post(ALBUM_API_URL)
-        .header(Authorization(format!("Bearer {}", access_token)))
-        .header(UserAgent(USER_AGENT.to_owned()))
-        .header(ContentType("application/json".parse().unwrap()))
-        .body(request_json.as_str());
+        .bearer_auth(access_token)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .json(&request_json);
 
     let res = req.send()?;
-    if res.status != hyper::status::StatusCode::Ok {
-        return Err(Error::HttpError(res.status));
+    if !res.status().is_success() {
+        return Err(Error::from(res));
     }
 
     let album_json: serde_json::Value = serde_json::from_reader(res)?;

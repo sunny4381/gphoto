@@ -1,27 +1,24 @@
 use clap::ArgMatches;
-
-use hyper::header::{UserAgent, Authorization};
-
-use hyper;
-use hyper::Client;
+use reqwest::blocking::Client;
 use serde_json;
 
-use url::form_urlencoded;
-
-use goauth::{client, USER_AGENT};
+use goauth::USER_AGENT;
 use config::Config;
 use error::Error;
 
 const ALBUM_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/albums";
 
-fn puts_albums_and_next(client: &Client, access_token: &str, url: &str) -> Result<(), Error> {
-    let res = client.get(url)
-        .header(Authorization(format!("Bearer {}", access_token)))
-        .header(UserAgent(USER_AGENT.to_owned()))
-        .send()?;
+fn puts_albums_and_next(client: &Client, access_token: &str, page_token: &Option<&str>) -> Result<(), Error> {
+    let mut req = client.get(ALBUM_API_URL)
+        .bearer_auth(access_token)
+        .header(reqwest::header::USER_AGENT, USER_AGENT);
+    if let Some(page_token) = page_token {
+        req = req.query(&[("pageToken", page_token)]);
+    }
+    let res = req.send()?;
 
-    if res.status != hyper::status::StatusCode::Ok {
-        return Err(Error::HttpError(res.status));
+    if !res.status().is_success() {
+        return Err(Error::from(res));
     }
 
     let albums_json: serde_json::Value = serde_json::from_reader(res)?;
@@ -42,13 +39,7 @@ fn puts_albums_and_next(client: &Client, access_token: &str, url: &str) -> Resul
     }
 
     if let Some(next_token) = albums_json["nextPageToken"].as_str() {
-        let next_url_params: String = form_urlencoded::Serializer::new(String::new())
-            .append_pair("pageToken", next_token)
-            .finish();
-
-        let next_url = format!("{}?{}", ALBUM_API_URL, next_url_params);
-
-        return puts_albums_and_next(client, access_token, &next_url);
+        return puts_albums_and_next(client, access_token, &Some(next_token));
     }
 
     Ok(())
@@ -58,6 +49,6 @@ pub fn execute_albums(_args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
     let access_token = config.access_token;
 
-    let client = client()?;
-    puts_albums_and_next(&client, &access_token, ALBUM_API_URL)
+    let client = reqwest::blocking::Client::new();
+    puts_albums_and_next(&client, &access_token, &None)
 }

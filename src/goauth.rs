@@ -1,15 +1,8 @@
-use hyper::Client;
-use hyper::net::HttpsConnector;
-use hyper_native_tls::NativeTlsClient;
-use hyper::header::{ContentType, UserAgent, Authorization};
-
+use reqwest;
+use serde_json;
 use url::form_urlencoded;
 
-use serde_json;
-
 use error::Error;
-
-use mime;
 
 pub const AUTH_URL: &'static str = "https://accounts.google.com/o/oauth2/v2/auth";
 pub const TOKEN_URL: &'static str = "https://www.googleapis.com/oauth2/v4/token";
@@ -17,10 +10,7 @@ pub const INFO_URL: &'static str = "https://www.googleapis.com/oauth2/v1/userinf
 pub const REDIRECT_URI: &'static str = "urn:ietf:wg:oauth:2.0:oob";
 pub const USER_AGENT: &'static str = "rust-oauth-test/0.1";
 
-header! { (XGoogUploadContentType, "X-Goog-Upload-Content-Type") => [mime::Mime] }
-header! { (XGoogUploadProtocol, "X-Goog-Upload-Protocol") => [String] }
-
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 pub struct Token {
     pub access_token: String,
     pub expires_in: u64,
@@ -28,7 +18,7 @@ pub struct Token {
     pub refresh_token: Option<String>,
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 pub struct UserInfo {
     pub id: String,
     pub name: String,
@@ -36,11 +26,6 @@ pub struct UserInfo {
     pub family_name: String,
     pub picture: String,
     pub email: String,
-}
-
-pub fn client() -> Result<Client, Error> {
-    let ssl = NativeTlsClient::new().map_err(Error::NativeTlsError)?;
-    return Ok(Client::with_connector(HttpsConnector::new(ssl)));
 }
 
 pub fn auth_url(client_id: &str) -> String {
@@ -54,27 +39,19 @@ pub fn auth_url(client_id: &str) -> String {
 }
 
 pub fn auth_token(client_id: &str, client_secret: &str, code: &str) -> Result<Token, Error> {
-    let token_body: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("code", code)
-        .append_pair("client_id", client_id)
-        .append_pair("client_secret", client_secret)
-        .append_pair("redirect_uri", REDIRECT_URI)
-        .append_pair("grant_type", "authorization_code")
-        .finish();
-
-    let client = client()?;
-    let req = client.post(TOKEN_URL)
-        .body(&token_body)
-        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
-        .header(UserAgent(USER_AGENT.to_owned()));
-    
-    let res = req.send()?;
-
-    let token_body: serde_json::Value = if res.status.is_success() {
-        serde_json::from_reader(res)?
-    } else {
-        return Err(Error::HttpError(res.status))
+    let client = reqwest::blocking::Client::new();
+    let res = client.post(TOKEN_URL)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .form(&[
+            ("code", code), ("client_id", client_id), ("client_secret", client_secret),
+            ("redirect_uri", REDIRECT_URI), ("grant_type", "authorization_code")
+        ])
+        .send()?;
+    if !res.status().is_success() {
+        return Err(Error::from(res))
     };
+
+    let token_body: serde_json::Value = serde_json::from_reader(res)?;
 
     return Ok(
         Token {
@@ -86,26 +63,19 @@ pub fn auth_token(client_id: &str, client_secret: &str, code: &str) -> Result<To
 }
 
 pub fn refresh_token(client_id: &str, client_secret: &str, refresh_token: &str) -> Result<Token, Error> {
-    let refresh_body: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("client_id", client_id)
-        .append_pair("client_secret", client_secret)
-        .append_pair("refresh_token", refresh_token)
-        .append_pair("grant_type", "refresh_token")
-        .finish();
-
-    let client = client()?;
-    let req = client.post(TOKEN_URL)
-        .body(&refresh_body)
-        .header(ContentType("application/x-www-form-urlencoded".parse().unwrap()))
-        .header(UserAgent(USER_AGENT.to_owned()));
-    
-    let res = req.send()?;
-
-    let refresh_body: serde_json::Value = if res.status.is_success() {
-        serde_json::from_reader(res)?
-    } else {
-        return Err(Error::HttpError(res.status))
+    let client = reqwest::blocking::Client::new();
+    let res = client.post(TOKEN_URL)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .form(&[
+            ("client_id", client_id), ("client_secret", client_secret), ("refresh_token", refresh_token),
+            ("grant_type", "refresh_token")
+        ])
+        .send()?;
+    if !res.status().is_success() {
+        return Err(Error::from(res))
     };
+
+    let refresh_body: serde_json::Value = serde_json::from_reader(res)?;
 
     return Ok(
         Token {
@@ -117,19 +87,16 @@ pub fn refresh_token(client_id: &str, client_secret: &str, refresh_token: &str) 
 }
 
 pub fn user_info(access_token: &str) -> Result<UserInfo, Error> {
-    let client = client()?;
-
-    let info_req = client.get(INFO_URL)
-        .header(Authorization(format!("Bearer {}", access_token)))
-        .header(UserAgent(USER_AGENT.to_owned()));
-    
-    let info_res = info_req.send()?;
-
-    let info_body: serde_json::Value = if info_res.status.is_success() {
-        serde_json::from_reader(info_res)?
-    } else {
-        return Err(Error::HttpError(info_res.status))
+    let client = reqwest::blocking::Client::new();
+    let info_res = client.get(INFO_URL)
+        .bearer_auth(access_token)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .send()?;
+    if !info_res.status().is_success() {
+        return Err(Error::from(info_res))
     };
+    
+    let info_body: serde_json::Value = serde_json::from_reader(info_res)?;
 
     return Ok(UserInfo {
         id: String::from(info_body["id"].as_str().unwrap()),
