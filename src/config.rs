@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path;
 
 use serde_json;
+use serde_json::json;
 
 use error::Error;
 

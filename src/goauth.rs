@@ -1,4 +1,5 @@
 use reqwest;
+use serde_derive::Deserialize;
 use serde_json;
 use url::form_urlencoded;
 

@@ -1,5 +1,6 @@
 use clap::ArgMatches;
 use reqwest;
+use serde_json::json;
 
 use goauth::USER_AGENT;
 use config::Config;

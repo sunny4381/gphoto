@@ -1,12 +1,9 @@
-#[macro_use]
 extern crate clap;
 extern crate env_logger;
 extern crate mime;
 extern crate reqwest;
 extern crate rustc_serialize;
-#[macro_use]
 extern crate serde_derive;
-#[macro_use]
 extern crate serde_json;
 extern crate url;
 
@@ -16,6 +13,8 @@ mod error;
 mod goauth;
 
 use std::io::{self, Write};
+
+use clap::clap_app;
 
 use cmd::execute;
 use error::Error;

@@ -3,9 +3,10 @@ use std::io::Read;
 use std::path::Path;
 
 use clap::ArgMatches;
+use mime;
 use reqwest;
 use reqwest::blocking::Client;
-use mime;
+use serde_json::json;
 
 use goauth::USER_AGENT;
 use config::Config;
