@@ -5,11 +5,11 @@ authors = ["NAKANO Hideo <pinarello.marvel@gmail.com>"]
 
 [dependencies]
 clap = "*"
-rustc-serialize = "*"
 env_logger = "*"
-hyper = "*"
-hyper-native-tls = "*"
-native-tls = "*"
+mime = "*"
+reqwest = { version = "*", features = ["blocking", "json"] }
+rustc-serialize = "*"
+serde = "*"
+serde_derive = "*"
 serde_json = "*"
 url = "*"
-mime = "*"
