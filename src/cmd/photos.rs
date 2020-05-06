@@ -5,9 +5,9 @@ use reqwest;
 use reqwest::blocking::Client;
 use serde_json;
 
-use goauth::USER_AGENT;
-use config::Config;
-use error::Error;
+use crate::goauth::USER_AGENT;
+use crate::config::Config;
+use crate::error::Error;
 
 const MEDIA_ITEM_LIST_URL: &'static str = "https://photoslibrary.googleapis.com/v1/mediaItems";
 const MEDIA_ITEM_SEARCH_URL: &'static str = "https://photoslibrary.googleapis.com/v1/mediaItems:search";

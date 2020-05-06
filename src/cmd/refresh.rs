@@ -1,8 +1,8 @@
 use clap::ArgMatches;
 
-use goauth;
-use config::Config;
-use error::Error;
+use crate::goauth;
+use crate::config::Config;
+use crate::error::Error;
 
 pub fn execute_refresh(_args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;

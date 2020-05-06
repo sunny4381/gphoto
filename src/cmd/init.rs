@@ -1,9 +1,9 @@
-use std::io::{self,BufRead,Write};
+use std::io::{self, BufRead, Write};
 use clap::ArgMatches;
 
-use goauth::{auth_url, auth_token};
-use error::Error;
-use config::Config;
+use crate::goauth::{auth_url, auth_token};
+use crate::error::Error;
+use crate::config::Config;
 
 fn prompt(label: &str) -> Result<(), Error> {
     print!("put your {}: ", label);

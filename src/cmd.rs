@@ -15,7 +15,7 @@ use self::albums::execute_albums;
 use self::album_create::execute_album_create;
 use self::photos::execute_photos;
 use self::whoami::execute_whoami;
-use error::Error;
+use crate::error::Error;
 
 pub fn execute(args: &ArgMatches) -> Result<(), Error> {
     if let Some(args) = args.subcommand_matches("init") {

@@ -8,9 +8,9 @@ use reqwest;
 use reqwest::blocking::Client;
 use serde_json::json;
 
-use goauth::USER_AGENT;
-use config::Config;
-use error::Error;
+use crate::goauth::USER_AGENT;
+use crate::config::Config;
+use crate::error::Error;
 
 const UPLOAD_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/uploads";
 const MEDIA_ITEM_CREATE_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate";

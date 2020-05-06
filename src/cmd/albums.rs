@@ -2,9 +2,9 @@ use clap::ArgMatches;
 use reqwest::blocking::Client;
 use serde_json;
 
-use goauth::USER_AGENT;
-use config::Config;
-use error::Error;
+use crate::goauth::USER_AGENT;
+use crate::config::Config;
+use crate::error::Error;
 
 const ALBUM_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/albums";
 

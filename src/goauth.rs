@@ -3,7 +3,7 @@ use serde_derive::Deserialize;
 use serde_json;
 use url::form_urlencoded;
 
-use error::Error;
+use crate::error::Error;
 
 pub const AUTH_URL: &'static str = "https://accounts.google.com/o/oauth2/v2/auth";
 pub const TOKEN_URL: &'static str = "https://www.googleapis.com/oauth2/v4/token";

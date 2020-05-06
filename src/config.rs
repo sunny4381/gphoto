@@ -6,7 +6,7 @@ use std::path;
 use serde_json;
 use serde_json::json;
 
-use error::Error;
+use crate::error::Error;
 
 #[derive(Debug)]
 pub struct Config {

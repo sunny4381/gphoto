@@ -1,8 +1,8 @@
 use clap::ArgMatches;
 
-use goauth::{user_info};
-use config::Config;
-use error::Error;
+use crate::goauth::user_info;
+use crate::config::Config;
+use crate::error::Error;
 
 pub fn execute_whoami(_args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
