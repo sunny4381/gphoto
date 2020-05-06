@@ -21,7 +21,7 @@ use cmd::execute;
 use error::Error;
 
 fn main() {
-    let args = clap_app!(myapp =>
+    let args = clap_app!(gphoto =>
         (author: "NAKANO Hideo. <pinarello.marvel@gmail.com>")
         (about: "Google Photo Uploader")
         (@subcommand init =>
@@ -47,14 +47,14 @@ fn main() {
         (@subcommand photos =>
             (@subcommand list =>
                 (about: "show all photos")
-                (@arg album_id: --album_id "album id to show")
+                (@arg album_id: --album_id +takes_value "album id to show")
             )
             (@subcommand up =>
                 (about: "upload photo")
                 (@arg file: +required "file to upload")
-                (@arg description: --description "photo description")
-                (@arg album_id: --album_id "album id to put")
-                (@arg filename: --filename "filename of photo")
+                (@arg description: --description +takes_value "photo description")
+                (@arg album_id: --album_id +takes_value "album id to put")
+                (@arg filename: --filename +takes_value "filename of photo")
             )
         )
     ).get_matches();
