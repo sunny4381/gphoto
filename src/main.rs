@@ -14,6 +14,7 @@ fn main() {
     let args = clap_app!(gphoto =>
         (author: "NAKANO Hideo. <pinarello.marvel@gmail.com>")
         (about: "Google Photo Uploader")
+        (version: "1.0.0")
         (@subcommand init =>
             (about: "initialize environment")
             (@arg client_id: +required "client id")
