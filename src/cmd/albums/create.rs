@@ -8,7 +8,7 @@ use crate::error::Error;
 
 const ALBUM_API_URL: &'static str = "https://photoslibrary.googleapis.com/v1/albums";
 
-pub fn execute_album_create(args: &ArgMatches) -> Result<(), Error> {
+pub fn execute_albums_create(args: &ArgMatches) -> Result<(), Error> {
     let name = args.value_of("name").unwrap_or_else(|| panic!("specify album name"));
 
     let config = Config::load("default")?;

@@ -93,7 +93,7 @@ fn create_media_item(client: &Client, access_token: &str, filepath: &Path, descr
     Ok(())
 }
 
-pub fn execute_up(args: &ArgMatches) -> Result<(), Error> {
+pub fn execute_photos_up(args: &ArgMatches) -> Result<(), Error> {
     let config = Config::load("default")?;
 
     let filepath = match args.value_of("file") {
