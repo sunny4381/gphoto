@@ -14,6 +14,7 @@ pub enum Error {
     HttpError(reqwest::StatusCode, String),
     SerdeError(serde_json::error::Error),
     ConfigError(String),
+    MalformedResponse(String),
     UnknownCommandError,
 }
 
@@ -26,6 +27,7 @@ impl fmt::Display for Error {
             Error::HttpError(ref status, ref msg) => write!(f, "HTTP error: {}\n{}", status, msg),
             Error::SerdeError(ref err) => write!(f, "Serde error: {}", err),
             Error::ConfigError(ref msg) => write!(f, "Config error: {}", msg),
+            Error::MalformedResponse(ref msg) => write!(f, "Malformed Response error: {}", msg),
             Error::UnknownCommandError => write!(f, "Unknown Command"),
         }
     }

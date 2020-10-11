@@ -60,7 +60,7 @@ fn upload_image(client: &Client, access_token: &str, filepath: &Path) -> Result<
     Ok(upload_token)
 }
 
-fn create_media_item(client: &Client, access_token: &str, filepath: &Path, description: &Option<&str>, album_id: &Option<&str>, filename: &Option<&str>, upload_token: &str) -> Result<(), Error> {
+fn create_media_item(client: &Client, access_token: &str, filepath: &Path, description: &Option<&str>, album_id: &Option<&str>, filename: &Option<&str>, upload_token: &str) -> Result<String, Error> {
     let mut request_body = json!({
         "newMediaItems": [
             {
@@ -90,7 +90,9 @@ fn create_media_item(client: &Client, access_token: &str, filepath: &Path, descr
         return Err(Error::from(res));
     }
 
-    Ok(())
+    let response: serde_json::Value = serde_json::from_reader(res)?;
+    let media_item_id = response["newMediaItemResults"][0]["mediaItem"]["id"].as_str();
+    media_item_id.map(|s| String::from(s)).ok_or(Error::MalformedResponse(String::from("no id")))
 }
 
 pub fn execute_photos_up(args: &ArgMatches) -> Result<(), Error> {
@@ -107,5 +109,7 @@ pub fn execute_photos_up(args: &ArgMatches) -> Result<(), Error> {
     let client = Client::new();
 
     let upload_token = upload_image(&client, &config.access_token, &filepath)?;
-    create_media_item(&client, &config.access_token, filepath, &description, &album_id, &filename, upload_token.as_str())
+    create_media_item(&client, &config.access_token, filepath, &description, &album_id, &filename, upload_token.as_str())?;
+
+    Ok(())
 }
