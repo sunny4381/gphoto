@@ -18,7 +18,7 @@ pub fn execute_albums_create(args: &ArgMatches) -> Result<(), Error> {
 
     let request_body = json!({
         "album": {
-            "title": name,
+            "title": name
         }
     });
     let request_json = request_body.to_string();
@@ -26,7 +26,7 @@ pub fn execute_albums_create(args: &ArgMatches) -> Result<(), Error> {
         .bearer_auth(access_token)
         .header(reqwest::header::USER_AGENT, USER_AGENT)
         .header(reqwest::header::CONTENT_TYPE, "application/json")
-        .json(&request_json);
+        .body(request_json);
 
     let res = req.send()?;
     if !res.status().is_success() {
